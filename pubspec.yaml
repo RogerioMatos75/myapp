@@ -37,6 +37,7 @@ dependencies:
   web: any
   js_interop: any
   http: any
+  flutter_dotenv: any
 
 dev_dependencies:
   flutter_test:
