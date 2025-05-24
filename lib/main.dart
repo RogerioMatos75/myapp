@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
+import 'dart:ui_web' as ui_web;
+import 'package:web/web.dart' as web;
 
 void main() {
   runApp(const MyApp());
@@ -7,116 +11,204 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Snippet Library App', // Título da aplicação
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        primarySwatch: Colors.blue, // Tema padrão
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: SnippetListPage(), // Nossa nova tela principal
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class SnippetListPage extends StatefulWidget {
+  const SnippetListPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  SnippetListPageState createState() => SnippetListPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class SnippetListPageState extends State<SnippetListPage> {
+  // Controlador para o campo de texto onde o usuário inserirá o código
+  final TextEditingController _codeController = TextEditingController();
+  // Lista para armazenar os snippets (inicialmente vazia)
+  List<SnippetCardData> snippets = [];
+  String _selectedCategory = 'Geral'; // Default category
+  final List<String> _categories = ['Geral', 'Widgets', 'Layout']; // Example categories
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void dispose() {
+    // Lembre-se de descartar o controlador quando o widget for removido
+    _codeController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Flutter Snippet Library'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Área para inserir o código
+            TextField(
+              controller: _codeController,
+              maxLines: 10, // Permite múltiplas linhas para o código
+              decoration: InputDecoration(
+                hintText: 'Cole seu código Flutter aqui...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16.0), // Espaço entre os elementos
+
+            // Área para a pré-visualização (Placeholder por enquanto)
+            Expanded(
+              flex: 1, // Ocupa 1 parte do espaço disponível
+              child: Container(
+                color: Colors.grey[200], // Cor de fundo para diferenciar
+                child: Center(
+                  child: Text('Pré-visualização do Snippet'),
+                ),
+              ),
+            ),
+            SizedBox(height: 16.0),
+
+            // Dropdown para selecionar a categoria
+            DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Categoria',
+                border: OutlineInputBorder(),
+              ),
+              items: _categories.map((String category) {
+                return DropdownMenuItem<String>(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _selectedCategory = newValue;
+                  });
+                }
+              },
+            ),
+            SizedBox(height: 16.0),
+
+            // Botão para salvar o snippet
+            ElevatedButton(
+              onPressed: () {
+                // TODO: Implementar a lógica para salvar o snippet
+                print('Código a ser salvo: ${_codeController.text}');
+                // For now, let's just add a dummy snippet to the list
+                setState(() {
+                  snippets.add(SnippetCardData(
+                    _codeController.text,
+                    _selectedCategory,
+                    'https://dartpad.dev/embed-flutter.html?code=${Uri.encodeComponent(_codeController.text)}', // Dummy URL
+                  ));
+                });
+              },
+              child: Text('Salvar Snippet'),
+            ),
+            SizedBox(height: 16.0),
+
+            // Área para a lista de cards de snippets
+            Expanded(
+              flex: 2, // Ocupa 2 partes do espaço disponível
+              child: ListView.builder(
+                itemCount: snippets.length,
+                itemBuilder: (context, index) {
+                  // TODO: Criar o SnippetCard Widget
+                  return SnippetCard(data: snippets[index]);
+                },
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+}
+
+// Modelo de dados para um Snippet (ainda simples)
+class SnippetCardData {
+  final String code;
+  final String category;
+  final String dartpadUrl; // Adicionar campo para o URL do DartPad
+
+  SnippetCardData(this.code, this.category, this.dartpadUrl);
+}
+
+// Function to register the iframe view factory
+void _registerIframeFactory(String viewType, String dartpadUrl) {
+  ui_web.platformViewRegistry.registerViewFactory(
+    viewType,
+    (int viewId) {
+      final iframe = web.document.createElement('iframe') as web.HTMLIFrameElement;
+      iframe.src = dartpadUrl;
+      iframe.style.border = 'none'; // Optional: remove iframe border
+      return iframe;
+    },
+  );
+}
+
+// Widget para exibir um Snippet em formato de card (Simplificado por enquanto)
+class SnippetCard extends StatelessWidget {
+  final SnippetCardData data;
+  const SnippetCard({super.key, required this.data});
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Snippet',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            SizedBox(height: 8.0),
+            // Display category
+            Text('Categoria: ${data.category}'),
+            SizedBox(height: 8.0),
+            // Display the DartPad embed
+            if (kIsWeb && data.dartpadUrl.isNotEmpty)
+              SizedBox(
+                height: 200, // Defina uma altura para o iframe
+                child: Builder(
+                  builder: (BuildContext context) {
+                    _registerIframeFactory('iframe-${data.hashCode}', data.dartpadUrl);
+                    return HtmlElementView(viewType: 'iframe-${data.hashCode}');                  },                ),              ),
+            SizedBox(height: 8.0),
+            Text(
+              'Código Fonte:',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            SizedBox(height: 8.0),
+            // Você pode usar um package para realce de sintaxe aqui
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              color: Colors.grey[200],
+              child: Text(data.code),
+            ),
+            // Exibindo o código (Pode ser necessário formatação futuramente)
+            Text(data.code),
+            SizedBox(height: 8.0),
+            // TODO: Adicionar botão de copiar
+            // TODO: Adicionar área para pré-visualização no card
+          ],
+        ),
+      ),
+    );
+  }
+
 }
